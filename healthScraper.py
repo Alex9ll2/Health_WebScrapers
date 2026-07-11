@@ -5,7 +5,7 @@ import csv
 
 SCROLLING_STARTING_INTERVAL = 2
 SCROLLING_ENDING_INTERVAL = 8
-PAGINATION_STOP = 1
+PAGINATION_STOP = 2
 _UP = 0
 _DOWN = 1
 _MAIN_URL = "https://pubmed.ncbi.nlm.nih.gov/"
@@ -105,6 +105,7 @@ async def main(key: str):
     search_bar_CSSselector = "#id_term"
     send_keys_CSSselector = "button.search-btn"
     result_CSSselector = "a.docsum-title"
+    pagination_button_CSSselector = "button.next-page-btn"
 
     browser = await uc.start()
     searchPage = await browser.get(_MAIN_URL)
@@ -119,6 +120,9 @@ async def main(key: str):
     # Security stop
     await sleep(2.5,3.4)
 
+    # Opening every endpoint in diferent tabs
+    writingHeaders()
+    
     # Result information
     endpoints = None
     for _ in range(PAGINATION_STOP):
@@ -126,14 +130,12 @@ async def main(key: str):
         endpoints = await searchPage.find_all(result_CSSselector, timeout=10)
         endpoints = await formatingResults(endpoints)
 
-    if endpoints is None:
-        return
-    # Opening every endpoint in diferent tabs
-    writingHeaders()
-    await openingTabs(endpoints, browser)
-
-    
-
+        if endpoints is None:
+            break
+        await openingTabs(endpoints, browser)
+        
+        await (await searchPage.find(pagination_button_CSSselector)).click()
+        await sleep(uniform(1.5,3.6))
 
 if __name__ == "__main__":
     uc.loop().run_until_complete(main("Blastoma"))
