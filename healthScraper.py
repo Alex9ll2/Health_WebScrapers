@@ -5,7 +5,7 @@ import csv
 
 SCROLLING_STARTING_INTERVAL = 2
 SCROLLING_ENDING_INTERVAL = 8
-PAGINATION_STOP = 2
+PAGINATION_STOP = 10
 _UP = 0
 _DOWN = 1
 _MAIN_URL = "https://pubmed.ncbi.nlm.nih.gov/"
@@ -14,7 +14,7 @@ FILE_NAME = "dumped_information.csv"
 def writingHeaders():
     with open(FILE_NAME, mode='w', encoding='utf-8', newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["DOI", "Title", "Authors", "Abstract"])
+        writer.writerow(["URL", "DOI", "Title", "Authors", "Abstract"])
 
 def writingInformation(data: list):
     """
@@ -58,33 +58,43 @@ async def urlExtraction(page: uc.Tab):
     authors_css_selector = "#full-view-heading .authors-list .full-name"
     doi_css_selector = "#full-view-heading .identifier.doi a.id-link"
     abstract_css_selector = "#eng-abstract p"
-
+    url_css_selector = 'meta[property="og:url"]'
+    try:
+        doi = await page.find(doi_css_selector)
+        doi = doi.text.replace("\n", "").strip()
+    except Exception as e:
+        return
     try:
         title = await page.find(title_css_selector)
         title = title.text.replace("\n", "").strip()
     except Exception as e:
-        title = "Title error"
+        title = "No title available"
         print(e)
     try:
         authors = await page.find(authors_css_selector)
         authors = authors.text_all.replace("\n", "").strip().split(" ")
     except Exception as e:
-        authors = "Authors error"
+        authors = "No authors available"
         print(e)
+
     try:
-        doi = await page.find(doi_css_selector)
-        doi = doi.text.replace("\n", "").strip()
-    except Exception as e:
-        doi = "DOI error"
-        print(e)
-    try:
-        abstract = await page.find(abstract_css_selector)
+        abstract = await page.find(abstract_css_selector, timeout=3)
         abstract = abstract.text.replace("\n", "").strip()
     except Exception as e:
-        abstract = "Abstract error"
+        abstract = "No abstract available"
         print(e)
-        
-    data = [doi, title, authors, abstract]
+    
+    try:
+        tab_url = await page.find(url_css_selector, timeout=3)
+        url_attributes = tab_url.attributes
+        page_url = None
+        for index in range(len(url_attributes)):
+            if url_attributes[index] == "content":
+                page_url = url_attributes[index+1]
+    except Exception as e:
+        pass
+
+    data = [page_url, doi, title, authors, abstract]
     writingInformation(data=data)
     
 async def openingTabs(endpoints: list, browser: uc.Browser):
@@ -138,5 +148,5 @@ async def main(key: str):
         await sleep(uniform(1.5,3.6))
 
 if __name__ == "__main__":
-    uc.loop().run_until_complete(main("Blastoma"))
+    uc.loop().run_until_complete(main("Liver cancer"))
     
