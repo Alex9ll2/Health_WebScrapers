@@ -3,3 +3,4 @@
 *.txt
 *.csv
 pruebas.py
+__pycache__
