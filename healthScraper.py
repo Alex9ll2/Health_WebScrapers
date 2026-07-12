@@ -110,7 +110,7 @@ async def openingTabs(endpoints: list, browser: uc.Browser):
 
         await tab.close()
 
-async def main(key: str):
+async def startScraping(key: str):
     # Starting code
     search_bar_CSSselector = "#id_term"
     send_keys_CSSselector = "button.search-btn"
@@ -147,6 +147,5 @@ async def main(key: str):
         await (await searchPage.find(pagination_button_CSSselector)).click()
         await sleep(uniform(1.5,3.6))
 
-if __name__ == "__main__":
-    uc.loop().run_until_complete(main("Liver cancer"))
-    
+def executeScraper(key: str):
+    uc.loop().run_until_complete(startScraping(key))
